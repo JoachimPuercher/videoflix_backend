@@ -9,6 +9,7 @@ class Video(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     thumbnail_url = models.URLField(max_length=200)
     category = models.CharField(max_length=40)
+    video_file = models.FileField()
 
     def __str__(self):
         return self.title
