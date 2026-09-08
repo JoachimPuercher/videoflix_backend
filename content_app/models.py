@@ -1,5 +1,6 @@
 from django.db import models
-
+from pathlib import Path
+from typing import Literal
 # Create your models here.
 
 class Video(models.Model):
@@ -13,3 +14,11 @@ class Video(models.Model):
 
     def __str__(self):
         return self.title
+
+    Quality = Literal["_480p", "_720p", "_1080p"]
+
+    def get_path(self, quality_string:Quality) -> str:
+        path = Path(self.video_file.path)
+        name = path.with_suffix("")
+        new_file_name = f"{name}{quality_string}.mp4"
+        return new_file_name
