@@ -1,7 +1,32 @@
+# Environment / secrets
 .env
+.env.*
+!.env.example
+!.env.template
 
-venv/
-
-
-CLAUDE.md
+# Python
 __pycache__/
+*.py[cod]
+venv/
+.venv/
+*.egg-info/
+
+# Django
+db.sqlite3
+/media/
+/static/
+*.log
+
+# Tests / tooling
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Project
+CLAUDE.md
