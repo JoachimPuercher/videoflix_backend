@@ -23,6 +23,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('django-rq/', include('django_rq.urls')),
     path('__debug__/', include('debug_toolbar.urls')),
+    path('api/', include('content_app.api.urls')),
 
 ]  + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)
 
