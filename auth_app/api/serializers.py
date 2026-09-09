@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
-
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 class RegisterSerializer(serializers.ModelSerializer):
     """Creates a User together with its UserProfile from a single registration payload."""
@@ -40,3 +40,30 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Password do not match')
         else:
             return values
+
+
+# New serializer to change jwt login with username, not email.
+class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+        if 'username' in self.fields:
+            self.fields.pop('username')
+
+    def validate(self, attrs):
+        email = attrs.get("email")
+        password = attrs.get("password")
+
+        try:
+             user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("Invalid email or password.")
+
+        if not user.check_password(password):
+            raise serializers.ValidationError("Invalid email or password.")
+
+        data = super().validate({"username" : user.username, "password" : password})
+        return data
