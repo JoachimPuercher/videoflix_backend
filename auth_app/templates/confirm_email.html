@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Videoflix email confirmation</title>
+</head>
+<body style="margin:0; padding:0; background:#ffffff;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff;">
+    <tr>
+      <td align="center" style="padding:32px 16px;">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px; width:100%;">
+
+          <!-- Logo -->
+          <tr>
+            <td align="center" style="padding:0 0 32px;">
+              <img src="cid:videoflix_logo" alt="Videoflix" width="240" style="display:block; width:240px; max-width:100%; height:auto; border:0;">
+            </td>
+          </tr>
+
+          <!-- Greeting + intro -->
+          <tr>
+            <td style="padding:0 0 24px; font-family:'Google Sans', Roboto, Arial, Helvetica, sans-serif; font-size:16px; line-height:24px; color:#202124;">
+              Dear <span style="color:#3547FF;">{{ user_name }}</span>,<br>
+              Thank you for registering with <a href="{{ FRONTEND_URL }}" style="color:#3547FF; text-decoration:none;">Videoflix</a>. To complete your registration and verify your email address, please click the link below:
+            </td>
+          </tr>
+
+          <!-- Button -->
+          <tr>
+            <td align="left" style="padding:0 0 32px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center" bgcolor="#2A35D9" style="border-radius:32px;">
+                    <a href="{{ tracking_link }}" style="display:inline-block; padding:16px 40px; font-family:'Google Sans', Roboto, Arial, Helvetica, sans-serif; font-size:18px; font-weight:bold; line-height:22px; color:#ffffff; text-decoration:none; border-radius:32px;">
+                      Activate account
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Disclaimer -->
+          <tr>
+            <td style="padding:0 0 24px; font-family:'Google Sans', Roboto, Arial, Helvetica, sans-serif; font-size:16px; line-height:24px; color:#202124;">
+              If you did not create an account with us, please disregard this email.
+            </td>
+          </tr>
+
+          <!-- Sign-off -->
+          <tr>
+            <td style="padding:0 0 24px; font-family:'Google Sans', Roboto, Arial, Helvetica, sans-serif; font-size:16px; line-height:24px; color:#202124;">
+              Best regards,
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0; font-family:'Google Sans', Roboto, Arial, Helvetica, sans-serif; font-size:16px; line-height:24px; color:#202124;">
+              Your Videoflix Team.
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
