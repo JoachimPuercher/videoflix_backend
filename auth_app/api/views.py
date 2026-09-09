@@ -8,7 +8,8 @@ from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.utils.encoding import force_str
 from django.contrib.auth.models import User
-
+from rest_framework.renderers import TemplateHTMLRenderer
+import os
 
 # LoginSerializer, UserSerializer
 # from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenBlacklistView
@@ -50,6 +51,7 @@ class UserActivationView(views.APIView):
 
     authentication_classes = []
     permission_classes = [AllowAny]
+    renderer_classes = [TemplateHTMLRenderer]
 
     def get(self, request, *args, **kwargs):
 
@@ -63,7 +65,17 @@ class UserActivationView(views.APIView):
                 if default_token_generator.check_token(user, token) is True:
                     user.is_active = True
                     user.save()
-                    return Response(data={"message" : "Account successfully activated."})
+
+                    if request.accepted_renderer.format == 'html':
+
+                        template_data = {
+                            "title" : "Welcome to videoflix!",
+                            "message" : "Account successfully activated.",
+                            "FRONTEND_URL" : f"{os.getenv('FRONTEND_URL')}pages/auth/login.html"
+                        }
+                        return Response(template_data, template_name='activation_result.html')
+                    else:
+                        return Response({"message": "Account successfully activated."}, status=status.HTTP_200_OK)
                 else:
                     return Response(data={"error" : "Activation failed!"}, status=status.HTTP_400_BAD_REQUEST)    
             except:
