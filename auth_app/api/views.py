@@ -4,6 +4,8 @@ from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from .serializers import RegisterSerializer
+from django.contrib.auth.tokens import default_token_generator
+
 # LoginSerializer, UserSerializer
 # from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenBlacklistView
 # from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
@@ -25,15 +27,15 @@ class RegistrationView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-        
-        send_order_confirmation(user)
+        verify_token = default_token_generator.make_token(user)
+        send_order_confirmation(user, verify_token)
 
         data = {
             "user" : {
                 "id" : user.id,
                 "email" : user.email,
             },
-            "token" : "token"
+            "token" : verify_token
         }
 
         return Response(data, status=status.HTTP_201_CREATED)

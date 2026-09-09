@@ -9,8 +9,8 @@ from django.utils.encoding import force_bytes
 from django.conf import settings
 
 
-def send_order_confirmation(user):
-    verify_token = default_token_generator.make_token(user)
+def send_order_confirmation(user, verify_token):
+
     user_bytes = force_bytes(user.id)
     uidb64 = urlsafe_base64_encode(user_bytes)
 
