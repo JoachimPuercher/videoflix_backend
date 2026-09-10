@@ -13,7 +13,8 @@ from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework.renderers import TemplateHTMLRenderer
 import os
 from .authentication import JWTCookieAuthentication
-from auth_app.tasks import send_order_confirmation
+from auth_app.tasks import trigger_mail_verification
+import django_rq
 
 
 class RegistrationView(generics.CreateAPIView):
@@ -25,20 +26,22 @@ class RegistrationView(generics.CreateAPIView):
 
     def create(self, request):
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-        verify_token = default_token_generator.make_token(user)
-        send_order_confirmation(user, verify_token)
+        if serializer.is_valid(raise_exception=True):
+            user = serializer.save()
+            verify_token = default_token_generator.make_token(user)
+            queue = django_rq.get_queue('default', autocommit=True)
+            queue.enqueue(trigger_mail_verification, user.id, verify_token)
 
-        data = {
-            "user" : {
-                "id" : user.id,
-                "email" : user.email,
-            },
-            "token" : verify_token
-        }
+            data = {
+                "user" : {
+                    "id" : user.id,
+                    "email" : user.email,
+                },
+                "token" : verify_token
+            }
 
-        return Response(data, status=status.HTTP_201_CREATED)
+            return Response(data, status=status.HTTP_201_CREATED)
+
 
 
 class LoginView(TokenObtainPairView):
