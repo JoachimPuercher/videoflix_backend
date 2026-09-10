@@ -12,16 +12,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework.renderers import TemplateHTMLRenderer
 import os
-
-# LoginSerializer, UserSerializer
-# from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenBlacklistView
-# from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
-# from .authentication import JWTCookieAuthentication
-
-
-
+from .authentication import JWTCookieAuthentication
 from auth_app.tasks import send_order_confirmation
-
 
 
 class RegistrationView(generics.CreateAPIView):
@@ -47,6 +39,122 @@ class RegistrationView(generics.CreateAPIView):
         }
 
         return Response(data, status=status.HTTP_201_CREATED)
+
+
+class LoginView(TokenObtainPairView):
+# Self created class from the simplejwt class.
+
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    serializer_class = EmailTokenObtainPairSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+
+        try:
+            serializer.is_valid(raise_exception=True)
+        except TokenError as e:
+            raise InvalidToken(e.args[0]) from e
+
+        response = Response(serializer.validated_data, status=status.HTTP_200_OK)
+        access_token = response.data.get("access")
+        refresh_token =response.data.get("refresh")
+
+        # Set cookie direkt on response access/token.
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            secure=True,
+            samesite="Lax"
+        )
+        response.set_cookie(
+            key="refresh_token",
+            value=refresh_token,
+            httponly=True,
+            secure=True,
+            samesite="Lax",
+            max_age=86400
+        )
+        # Update response.data that no access/refresh token is in the response.
+        response.data = {
+            "detail" : "Login successful",
+            "user" : {
+                "id" : serializer.user.id,
+                "username" :serializer.user.email
+            }
+        }
+
+        return response
+
+def delete_jwt_cookies(response:Response):
+    response.delete_cookie('access_token', path='/')
+    response.delete_cookie('refresh_token', path='/')
+
+class LogoutView(TokenBlacklistView):
+
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs) -> Response:
+
+        print(request.COOKIES)
+        try:
+            refresh_token = request.COOKIES.get("refresh_token")
+            serializer = self.get_serializer(data={"refresh" : refresh_token})
+            serializer.is_valid(raise_exception=True)
+
+            response = Response({"detail": "Log-Out successfully! All Tokens will be deleted. Refresh token is now invalid."}, status=status.HTTP_200_OK)
+            delete_jwt_cookies(response)
+            return response
+
+        except TokenError:
+            # If the token is already invalid/expired, still clear cookies
+            response = Response({"detail": "Log-Out successfully! All Tokens will be deleted. Refresh token is now invalid."}, status=status.HTTP_200_OK)
+            delete_jwt_cookies(response)
+            return response
+
+class CookieTokenRefreshView(TokenRefreshView):
+
+    authentication_classes = []
+    permission_classes = [AllowAny]
+    
+    def post(self, request, *args, **kwargs):
+
+        refresh_token = request.COOKIES.get("refresh_token")
+
+        if refresh_token is None:
+            return Response(
+                {"message" : "Refresh token not found!"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = self.get_serializer(data={"refresh":refresh_token})
+
+        try:
+            serializer.is_valid(raise_exception=True)
+        except:
+
+            response = Response(
+                {"message" : "Refresh token not found!"},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+            delete_jwt_cookies(response)
+            return response
+
+        access_token = serializer.validated_data.get("access")
+        response = Response({"detail" : "Token refreshed.", "access" : "new_access_token"})
+
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            secure=True,
+            samesite="Lax"
+        )
+
+        return response
 
 
 class UserActivationView(views.APIView):
@@ -82,48 +190,3 @@ class UserActivationView(views.APIView):
                     return Response(data={"error" : "Activation failed!"}, status=status.HTTP_400_BAD_REQUEST)    
             except:
                 return Response(data={"error" : "Activation failed!"}, status=status.HTTP_400_BAD_REQUEST)
-
-
-class LoginView(TokenObtainPairView):
-# Self created class from the simplejwt class.
-
-    serializer_class = EmailTokenObtainPairSerializer
-
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-
-        try:
-            serializer.is_valid(raise_exception=True)
-        except TokenError as e:
-            raise InvalidToken(e.args[0]) from e
-
-        response = Response(serializer.validated_data, status=status.HTTP_200_OK)
-        access_token = response.data.get("access")
-        refresh_token =response.data.get("refresh")
-
-        # Set cookie direkt on response access/token.
-        response.set_cookie(
-            key="access_token",
-            value=access_token,
-            httponly=True,
-            secure=True,
-            samesite="Lax"
-        )
-        response.set_cookie(
-            key="refresh_token",
-            value=refresh_token,
-            httponly=True,
-            secure=True,
-            samesite="Lax"
-        )
-        # Update response.data that no access/refresh token is in the response.
-        response.data = {
-            "detail" : "Login successful",
-            "user" : {
-                "id" : serializer.user.id,
-                "username" :serializer.user.email
-            }
-        }
-
-        return response
-
