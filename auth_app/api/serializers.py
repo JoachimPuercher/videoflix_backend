@@ -67,3 +67,10 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         data = super().validate({"username" : user.username, "password" : password})
         return data
+
+
+class EmailSerializer(serializers.Serializer):
+
+    email = serializers.EmailField(read_only=True)
+
+  

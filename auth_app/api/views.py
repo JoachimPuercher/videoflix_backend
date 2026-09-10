@@ -3,7 +3,7 @@ from rest_framework import generics, status, views
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny, IsAuthenticated, SAFE_METHODS
 from rest_framework.response import Response
-from .serializers import RegisterSerializer, EmailTokenObtainPairSerializer
+from .serializers import RegisterSerializer, EmailTokenObtainPairSerializer, EmailSerializer
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.utils.encoding import force_str
@@ -13,8 +13,9 @@ from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework.renderers import TemplateHTMLRenderer
 import os
 from .authentication import JWTCookieAuthentication
-from auth_app.tasks import trigger_mail_verification
+from auth_app.tasks import trigger_mail_verification, trigger_password_reset
 import django_rq
+from auth_app.tasks import trigger_password_reset
 
 
 class RegistrationView(generics.CreateAPIView):
@@ -193,3 +194,18 @@ class UserActivationView(views.APIView):
                     return Response(data={"error" : "Activation failed!"}, status=status.HTTP_400_BAD_REQUEST)    
             except:
                 return Response(data={"error" : "Activation failed!"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PasswordResetView(views.APIView):
+
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+
+        serializer = EmailSerializer(data=request.data)
+        if serializer.is_valid():
+            queue = django_rq.get_queue('default', autocommit=True)
+            queue.enqueue(trigger_password_reset, serializer.validated_data['email'])
+
+        return Response(data={"detail" : "An email has been sent to reset your password."})
