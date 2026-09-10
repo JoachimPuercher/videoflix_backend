@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'django_rq',
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'auth_app',
     'content_app.apps.ContentAppConfig',
     'debug_toolbar',
