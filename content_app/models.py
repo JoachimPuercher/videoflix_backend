@@ -26,3 +26,8 @@ class Video(models.Model):
         video_path = Path(settings.MEDIA_ROOT) / "videos" / str(self.id) / resolution 
         playlist = video_path / "index.m3u8"
         return playlist
+
+    def get_segment(self, resolution: "Video.Resolution", url_segment:str) -> Path:
+        video_path = Path(settings.MEDIA_ROOT) / "videos" / str(self.id) / resolution 
+        segment = video_path / url_segment
+        return segment

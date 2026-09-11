@@ -33,3 +33,24 @@ class HlsMasterPlaylistView(generics.views.APIView):
             raise Http404
             
         return FileResponse(open(movie_path, "rb"), content_type="application/vnd.apple.mpegurl")
+
+
+class HlsSegmentView(generics.views.APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        movie_id = self.kwargs["movie_id"]   
+        video = get_object_or_404(Video, pk=movie_id)
+        resolution = self.kwargs["resolution"]
+
+        if resolution not in Video.Resolution.values:
+            raise Http404
+
+        segment = self.kwargs["segment"]
+        segment_path = video.get_segment(resolution, segment)
+
+        if not segment_path.is_file():
+            raise Http404
+            
+        return FileResponse(open(segment_path, "rb"), content_type="video/MP2T")
