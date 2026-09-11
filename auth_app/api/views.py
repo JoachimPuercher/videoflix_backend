@@ -3,7 +3,7 @@ from rest_framework import generics, status, views
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny, IsAuthenticated, SAFE_METHODS
 from rest_framework.response import Response
-from .serializers import RegisterSerializer, EmailTokenObtainPairSerializer, EmailSerializer
+from .serializers import RegisterSerializer, EmailTokenObtainPairSerializer, EmailSerializer, ResetPasswordSerializer
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.utils.encoding import force_str
@@ -209,3 +209,35 @@ class PasswordResetView(views.APIView):
             queue.enqueue(trigger_password_reset, serializer.validated_data['email'])
 
         return Response(data={"detail" : "An email has been sent to reset your password."})
+
+
+class PasswordConfirmView(views.APIView):
+
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+
+        try:
+            uidb64_string = self.kwargs['uidb64']
+            decoded_uidb64 = urlsafe_base64_decode(uidb64_string)
+            user_id = force_str(decoded_uidb64)
+            token = self.kwargs['token']
+            user = User.objects.get(pk=user_id)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            # Broken uid or unknown user: same answer as an invalid token.
+            return Response(data={"detail": "Invalid or expired link."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not default_token_generator.check_token(user, token):
+            return Response(data={"detail": "Invalid or expired link."}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = ResetPasswordSerializer(data=request.data, context={"user" : user})
+        # Field errors (missing or mismatching passwords) are rendered by DRF as 400.
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(data={"detail": "Your Password has been successfully reset."}, status=status.HTTP_200_OK)
+        
+
+
+       

@@ -73,4 +73,20 @@ class EmailSerializer(serializers.Serializer):
 
     email = serializers.EmailField(read_only=True)
 
-  
+
+class ResetPasswordSerializer(serializers.Serializer):
+
+    confirm_password = serializers.CharField(max_length=100, write_only=True)
+    new_password = serializers.CharField(max_length=100, write_only=True)
+
+    def validate(self, values):
+        """Both password fields have to match."""
+        if values['new_password'] != values['confirm_password']:
+            raise serializers.ValidationError('Password do not match')
+        else:
+            return values
+
+    def save(self):
+        user = self.context["user"]
+        user.set_password(self.validated_data['new_password'])
+        user.save(update_fields=["password"])
