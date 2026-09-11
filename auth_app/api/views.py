@@ -185,7 +185,7 @@ class UserActivationView(views.APIView):
                         template_data = {
                             "title" : "Welcome to videoflix!",
                             "message" : "Account successfully activated.",
-                            "FRONTEND_URL" : f"{os.getenv('FRONTEND_URL')}pages/auth/login.html"
+                            "FRONTEND_URL" : f"{os.getenv('FRONTEND_URL')}/pages/auth/login.html"
                         }
                         return Response(template_data, template_name='activation_result.html')
                     else:
