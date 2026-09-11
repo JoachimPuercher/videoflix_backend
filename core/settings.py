@@ -33,7 +33,7 @@ CSRF_TRUSTED_ORIGINS = os.environ.get("CSRF_TRUSTED_ORIGINS", default="http://lo
 DEBUG = os.getenv('DEBUG') == "True"
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(',')
-
+CORS_ALLOWED_ORIGINS = os.environ['CORS_ALLOWED_ORIGINS'].split(",")
 
 # Application definition
 
@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'auth_app',
     'content_app.apps.ContentAppConfig',
     'debug_toolbar',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
