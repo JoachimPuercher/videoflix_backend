@@ -20,11 +20,14 @@ class HlsMasterPlaylistView(generics.views.APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        movie_id = self.kwargs["movie_id"]
-
+        movie_id = self.kwargs["movie_id"]   
         video = get_object_or_404(Video, pk=movie_id)
         resolution = self.kwargs["resolution"]
-        movie_path = video.get_path(f"{resolution}")
+
+        if resolution not in Video.Resolution.values:
+            raise Http404
+
+        movie_path = video.get_path(resolution)
 
         if not movie_path.is_file():
             raise Http404

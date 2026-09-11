@@ -1,12 +1,16 @@
 from django.db import models
 from pathlib import Path
-from typing import Literal
 from django.conf import settings
-from pathlib import Path
 
 # Create your models here.
 
 class Video(models.Model):
+
+    class Resolution(models.TextChoices):
+        """Resolutions the worker renders; also the whitelist for URL parameters."""
+        P480 = "480p"
+        P720 = "720p"
+        P1080 = "1080p"
 
     title = models.CharField(max_length=100)
     description = models.CharField(max_length=255)
@@ -18,10 +22,7 @@ class Video(models.Model):
     def __str__(self):
         return self.title
 
-    Quality = Literal["480p", "720p", "1080p"]
-
-    def get_path(self, resolution:Quality) -> Path:
+    def get_path(self, resolution: "Video.Resolution") -> Path:
         video_path = Path(settings.MEDIA_ROOT) / "videos" / str(self.id) / resolution 
-        video_path.mkdir(parents=True, exist_ok=True)
         playlist = video_path / "index.m3u8"
         return playlist
