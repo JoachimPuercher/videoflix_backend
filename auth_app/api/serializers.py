@@ -71,7 +71,7 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class EmailSerializer(serializers.Serializer):
 
-    email = serializers.EmailField(read_only=True)
+    email = serializers.EmailField(write_only=True)
 
 
 class ResetPasswordSerializer(serializers.Serializer):
