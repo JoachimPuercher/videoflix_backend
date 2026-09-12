@@ -22,7 +22,7 @@ def send_password_reset_mail(uidb64, user_email, verify_token):
     FRONTEND_URL=os.getenv('FRONTEND_URL')
     context = {
         "frontend_url" : f"{FRONTEND_URL}/pages/auth/login.html",
-        "password_reset_link": f"{FRONTEND_URL}/pages/auth/confirm_password.html?uid={uidb64}&token={verify_token}/",
+        "password_reset_link": f"{FRONTEND_URL}/pages/auth/confirm_password.html?uid={uidb64}&token={verify_token}",
     }
     text_body = render_to_string("reset_password.txt", context)
     html_body = render_to_string("reset_password.html", context)
