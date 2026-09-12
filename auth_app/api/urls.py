@@ -1,3 +1,5 @@
+"""Routes of the auth API, mounted under /api/ in core/urls.py."""
+
 from django.urls import path
 from .views import RegistrationView, UserActivationView, LoginView, LogoutView, CookieTokenRefreshView, PasswordResetView, PasswordConfirmView
 

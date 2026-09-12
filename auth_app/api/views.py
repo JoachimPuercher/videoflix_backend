@@ -1,3 +1,10 @@
+"""Views of the auth API.
+
+All endpoints here are public (no cookie needed): registration, activation,
+login, logout, token refresh and password reset. Tokens travel only as
+HttpOnly cookies; mails are sent through rq jobs.
+"""
+
 from django.shortcuts import render
 from rest_framework import generics, status, views
 from rest_framework.authtoken.models import Token
@@ -19,13 +26,14 @@ from auth_app.tasks import trigger_password_reset
 
 
 class RegistrationView(generics.CreateAPIView):
-    """Registers a new user."""
+    """POST /api/register/: create an inactive user and mail the activation link."""
 
     authentication_classes = []
     permission_classes = [AllowAny]
     serializer_class = RegisterSerializer
 
     def create(self, request):
+        """Save the user, enqueue the mail job and echo id, email and token."""
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             user = serializer.save()
@@ -46,7 +54,7 @@ class RegistrationView(generics.CreateAPIView):
 
 
 class LoginView(TokenObtainPairView):
-# Self created class from the simplejwt class.
+    """POST /api/login/: check email and password, set the JWT cookies."""
 
     authentication_classes = []
     permission_classes = [AllowAny]
@@ -54,6 +62,7 @@ class LoginView(TokenObtainPairView):
     serializer_class = EmailTokenObtainPairSerializer
 
     def post(self, request, *args, **kwargs):
+        """Issue access and refresh cookies; the body never contains tokens."""
         serializer = self.get_serializer(data=request.data)
 
         try:
@@ -93,16 +102,22 @@ class LoginView(TokenObtainPairView):
         return response
 
 def delete_jwt_cookies(response:Response):
+    """Expire both JWT cookies on the given response."""
     response.delete_cookie('access_token', path='/')
     response.delete_cookie('refresh_token', path='/')
 
 class LogoutView(TokenBlacklistView):
+    """POST /api/logout/: blacklist the refresh cookie and clear both cookies.
+
+    No login is required: the refresh token itself is the proof of ownership,
+    and an expired access cookie must not block the logout.
+    """
 
     authentication_classes = []
     permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs) -> Response:
-
+        """Blacklist the refresh token; an invalid one still clears the cookies."""
         print(request.COOKIES)
         try:
             refresh_token = request.COOKIES.get("refresh_token")
@@ -120,12 +135,13 @@ class LogoutView(TokenBlacklistView):
             return response
 
 class CookieTokenRefreshView(TokenRefreshView):
+    """POST /api/token/refresh/: trade the refresh cookie for a new access cookie."""
 
     authentication_classes = []
     permission_classes = [AllowAny]
-    
-    def post(self, request, *args, **kwargs):
 
+    def post(self, request, *args, **kwargs):
+        """400 without cookie, 401 with an invalid one (cookies cleared), else 200."""
         refresh_token = request.COOKIES.get("refresh_token")
 
         if refresh_token is None:
@@ -162,13 +178,17 @@ class CookieTokenRefreshView(TokenRefreshView):
 
 
 class UserActivationView(views.APIView):
+    """GET /api/activate/<uidb64>/<token>/: activate the account from the mail link.
+
+    Browsers (Accept: text/html) get the result page, API clients get JSON.
+    """
 
     authentication_classes = []
     permission_classes = [AllowAny]
     renderer_classes = [JSONRenderer, TemplateHTMLRenderer]
 
     def get(self, request, *args, **kwargs):
-
+            """Decode the uid, check the token and set is_active."""
             try:
                 uidb64_string = self.kwargs['uidb64']
                 decoded_uidb64 = urlsafe_base64_decode(uidb64_string)
@@ -197,12 +217,17 @@ class UserActivationView(views.APIView):
 
 
 class PasswordResetView(views.APIView):
+    """POST /api/password_reset/: enqueue the reset mail for a known address.
+
+    The answer is always 200 so the endpoint cannot be used to find out
+    which addresses are registered.
+    """
 
     authentication_classes = []
     permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
-
+        """Validate the address and hand the lookup and mail to the worker."""
         serializer = EmailSerializer(data=request.data)
         if serializer.is_valid():
             queue = django_rq.get_queue('default', autocommit=True)
@@ -212,12 +237,17 @@ class PasswordResetView(views.APIView):
 
 
 class PasswordConfirmView(views.APIView):
+    """POST /api/password_confirm/<uidb64>/<token>/: set the new password.
+
+    The link becomes invalid by itself once the password changed, because
+    the password hash is part of the token.
+    """
 
     authentication_classes = []
     permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
-
+        """Resolve the user, verify the token, then validate and save the password."""
         try:
             uidb64_string = self.kwargs['uidb64']
             decoded_uidb64 = urlsafe_base64_decode(uidb64_string)

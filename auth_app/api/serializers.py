@@ -1,10 +1,12 @@
+"""Serializers of the auth API: registration, login, password reset."""
+
 from django.contrib.auth.models import User
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 class RegisterSerializer(serializers.ModelSerializer):
-    """Creates a User together with its UserProfile from a single registration payload."""
+    """Create an inactive User from email, password and confirmed_password."""
 
     confirmed_password = serializers.CharField(max_length=100, write_only=True)
 
@@ -16,7 +18,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         }
 
     def save(self):
-        """Create the user with a hashed password and the matching profile."""
+        """Create the user with a hashed password; the email doubles as username."""
         user = User(
             username=self.validated_data['email'],
             email=self.validated_data['email'],
@@ -43,8 +45,13 @@ class RegisterSerializer(serializers.ModelSerializer):
             return values
 
 
-# New serializer to change jwt login with username, not email.
 class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """Simple JWT login with email instead of username.
+
+    The parent adds a required `username` field at runtime; it is removed
+    here and looked up from the email before the parent issues the tokens.
+    """
+
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
 
@@ -55,6 +62,11 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
             self.fields.pop('username')
 
     def validate(self, attrs):
+        """Reject unknown address, wrong password and inactive account alike.
+
+        One message and one status (401) for all three, so the login does
+        not reveal whether an address is registered.
+        """
         email = attrs.get("email")
         password = attrs.get("password")
 
@@ -71,11 +83,13 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 
 class EmailSerializer(serializers.Serializer):
+    """Validate the address of a password reset request; nothing is saved."""
 
     email = serializers.EmailField(write_only=True)
 
 
 class ResetPasswordSerializer(serializers.Serializer):
+    """Set a new password for the user passed in context["user"]."""
 
     confirm_password = serializers.CharField(max_length=100, write_only=True)
     new_password = serializers.CharField(max_length=100, write_only=True)
@@ -88,6 +102,7 @@ class ResetPasswordSerializer(serializers.Serializer):
             return values
 
     def save(self):
+        """Hash and store the new password; only that column is written."""
         user = self.context["user"]
         user.set_password(self.validated_data['new_password'])
         user.save(update_fields=["password"])

@@ -1,4 +1,10 @@
-# shop/utils.py
+"""Mail jobs for account activation and password reset.
+
+The trigger_* functions are enqueued with django-rq and run in the worker;
+they receive plain values (id or address) and load the user themselves. The
+send_* functions build the multipart mail with the inline logo and send it.
+"""
+
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 import os
@@ -12,6 +18,7 @@ from django.conf import settings
 
 
 def send_password_reset_mail(uidb64, user_email, verify_token):
+    """Send the reset mail; the link points to the frontend confirm page."""
     FRONTEND_URL=os.getenv('FRONTEND_URL')
     context = {
         "frontend_url" : f"{FRONTEND_URL}/pages/auth/login.html",
@@ -47,7 +54,7 @@ def send_password_reset_mail(uidb64, user_email, verify_token):
 
 
 def send_order_confirmation(uidb64, user_email, user_username, verify_token,):
-
+    """Send the activation mail; the link points straight to the API."""
     BACKEND_URL=os.getenv('BACKEND_URL')
     FRONTEND_URL=os.getenv('FRONTEND_URL')
     context = {
@@ -86,6 +93,7 @@ def send_order_confirmation(uidb64, user_email, user_username, verify_token,):
 
 
 def trigger_password_reset(user_mail):
+    """rq job: build uid and token for the address and send the reset mail."""
     user = User.objects.filter(email=user_mail).first()
     if user is None:
         # Unknown address: nothing to send, and no failed job in the registry.
@@ -96,6 +104,7 @@ def trigger_password_reset(user_mail):
     send_password_reset_mail(uidb64, user.email, verify_token)
 
 def trigger_mail_verification(user_id, verify_token):
+    """rq job: send the activation mail for a freshly registered user."""
     user = User.objects.get(pk=user_id)
     user_bytes = force_bytes(user.id)
     uidb64 = urlsafe_base64_encode(user_bytes)
