@@ -2,16 +2,16 @@
 
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import AccessToken
 
-from .utils import create_active_user, login
+from .utils import AuthAPITestCase, create_active_user, login
 
 
-class TokenRefreshTest(APITestCase):
+class TokenRefreshTest(AuthAPITestCase):
     """The refresh cookie yields a new access cookie."""
 
     def setUp(self):
+        super().setUp()
         self.url = reverse("token_refresh")
         self.user = create_active_user()
         login(self.client)

@@ -3,14 +3,16 @@
 from django.contrib.auth.models import User
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 
+from .utils import AuthAPITestCase
 
-class LoginTest(APITestCase):
+
+class LoginTest(AuthAPITestCase):
     """Login checks e-mail and password and hands out the JWT cookies."""
 
     def setUp(self):
+        super().setUp()
         self.url = reverse("login")
         self.user = User.objects.create_user(
             username="user@example.com",
@@ -115,6 +117,18 @@ class LoginTest(APITestCase):
             self.url, self.missing_field, format="json"
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_login_is_throttled(self):
+        """After the configured number of attempts the login answers 429."""
+        for _ in range(10):
+            self.client.post(self.url, self.wrong_password, format="json")
+        response = self.client.post(
+            self.url, self.correct_payload, format="json"
+        )
+        self.assertEqual(
+            response.status_code, status.HTTP_429_TOO_MANY_REQUESTS
+        )
+        self.assertNotIn("access_token", response.cookies)
 
     def test_inactive_user_cannot_login(self):
         """An account that was never activated gets no tokens."""

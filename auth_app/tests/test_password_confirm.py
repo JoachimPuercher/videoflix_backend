@@ -5,9 +5,8 @@ from django.urls import reverse
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from rest_framework import status
-from rest_framework.test import APITestCase
 
-from .utils import PASSWORD, create_active_user
+from .utils import PASSWORD, AuthAPITestCase, create_active_user
 
 NEW_PASSWORD = "brandnewpassword"
 
@@ -18,10 +17,11 @@ def confirm_url(uidb64, token):
     )
 
 
-class PasswordConfirmTest(APITestCase):
+class PasswordConfirmTest(AuthAPITestCase):
     """The link from the reset mail sets a new password exactly once."""
 
     def setUp(self):
+        super().setUp()
         self.user = create_active_user()
         self.uidb64 = urlsafe_base64_encode(force_bytes(self.user.id))
         self.token = default_token_generator.make_token(self.user)

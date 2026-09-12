@@ -2,16 +2,16 @@
 
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.test import APITestCase
 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken
 
-from .utils import create_active_user, login
+from .utils import AuthAPITestCase, create_active_user, login
 
 
-class LogoutTest(APITestCase):
+class LogoutTest(AuthAPITestCase):
     """Logout blacklists the refresh token and removes both cookies."""
 
     def setUp(self):
+        super().setUp()
         self.url = reverse("logout")
         self.user = create_active_user()
         login(self.client)

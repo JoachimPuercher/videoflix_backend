@@ -5,6 +5,7 @@ import tempfile
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.test import override_settings
 from django.urls import reverse
 from rest_framework.test import APITestCase
@@ -13,6 +14,11 @@ from content_app.models import Video
 
 EMAIL = "user@example.com"
 PASSWORD = "securepassword"
+
+# Throttle counters live in the cache; keep them in memory and per test.
+LOCAL_CACHE = {
+    "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}
+}
 
 
 def create_video(**fields):
@@ -29,10 +35,13 @@ def create_video(**fields):
         return Video.objects.create(**data)
 
 
+@override_settings(CACHES=LOCAL_CACHE)
 class AuthenticatedMediaTestCase(APITestCase):
-    """Logged in client plus a throwaway MEDIA_ROOT for generated files."""
+    """Logged in client, empty cache and a throwaway MEDIA_ROOT per test."""
 
     def setUp(self):
+        super().setUp()
+        cache.clear()
         self.media_root = tempfile.mkdtemp()
         override = override_settings(MEDIA_ROOT=self.media_root)
         override.enable()

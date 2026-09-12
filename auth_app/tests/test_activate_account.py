@@ -6,17 +6,19 @@ from django.urls import reverse
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from rest_framework import status
-from rest_framework.test import APITestCase
+
+from .utils import AuthAPITestCase
 
 
 def activation_url(uidb64, token):
     return reverse("activate", kwargs={"uidb64": uidb64, "token": token})
 
 
-class ActivateAccountTest(APITestCase):
+class ActivateAccountTest(AuthAPITestCase):
     """The mail link activates exactly the user it was issued for."""
 
     def setUp(self):
+        super().setUp()
         self.user = User.objects.create_user(
             username="user@example.com",
             email="user@example.com",

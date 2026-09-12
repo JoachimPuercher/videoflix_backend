@@ -6,16 +6,16 @@ from django.core import mail
 from django.test import override_settings
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.test import APITestCase
 
-from .utils import SYNC_RQ
+from .utils import SYNC_RQ, AuthAPITestCase
 
 
 @override_settings(RQ_QUEUES=SYNC_RQ)
-class RegisterTest(APITestCase):
+class RegisterTest(AuthAPITestCase):
     """Registration creates an inactive user and sends the activation mail."""
 
     def setUp(self):
+        super().setUp()
         self.url = reverse("register")
         self.correct_payload = {
             "email": "user@example.com",

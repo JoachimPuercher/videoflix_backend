@@ -9,9 +9,8 @@ from django.urls import reverse
 from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode
 from rest_framework import status
-from rest_framework.test import APITestCase
 
-from .utils import EMAIL, SYNC_RQ, create_active_user
+from .utils import EMAIL, SYNC_RQ, AuthAPITestCase, create_active_user
 
 LINK_PATTERN = re.compile(
     r"confirm_password\.html\?uid=([^&\s]+)&token=([^/\s]+)"
@@ -19,10 +18,11 @@ LINK_PATTERN = re.compile(
 
 
 @override_settings(RQ_QUEUES=SYNC_RQ)
-class PasswordResetTest(APITestCase):
+class PasswordResetTest(AuthAPITestCase):
     """A reset request mails a link and never reveals if the address exists."""
 
     def setUp(self):
+        super().setUp()
         self.url = reverse("password_reset")
         self.user = create_active_user()
         self.message = "An email has been sent to reset your password."
@@ -66,6 +66,16 @@ class PasswordResetTest(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(mail.outbox), 0)
+
+    def test_reset_is_throttled(self):
+        """After the configured number of requests no further mail is sent."""
+        for _ in range(5):
+            self.client.post(self.url, {"email": EMAIL}, format="json")
+        response = self.client.post(self.url, {"email": EMAIL}, format="json")
+        self.assertEqual(
+            response.status_code, status.HTTP_429_TOO_MANY_REQUESTS
+        )
+        self.assertEqual(len(mail.outbox), 5)
 
     def test_missing_email(self):
         """An empty payload sends nothing."""
