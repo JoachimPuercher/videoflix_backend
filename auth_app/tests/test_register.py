@@ -1,6 +1,5 @@
 """Tests for POST /api/register/."""
 
-from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
 from django.core import mail
@@ -9,10 +8,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-# Run rq jobs synchronously inside the test instead of pushing them to the
-# real Redis, where the worker would execute them against the development
-# database.
-SYNC_RQ = {"default": {**settings.RQ_QUEUES["default"], "ASYNC": False}}
+from .utils import SYNC_RQ
 
 
 @override_settings(RQ_QUEUES=SYNC_RQ)
