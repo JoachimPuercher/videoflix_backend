@@ -12,9 +12,6 @@ from django.conf import settings
 
 
 def send_password_reset_mail(uidb64, user_email, verify_token):
-
-    
-
     FRONTEND_URL=os.getenv('FRONTEND_URL')
     context = {
         "frontend_url" : f"{FRONTEND_URL}/pages/auth/login.html",
@@ -31,7 +28,6 @@ def send_password_reset_mail(uidb64, user_email, verify_token):
     )
     
     msg.attach_alternative(html_body, "text/html")
-
     logo_path = settings.BASE_DIR / "auth_app" / "static" / "auth_app" / "logo.png"
 
     with open(logo_path, "rb") as f:
