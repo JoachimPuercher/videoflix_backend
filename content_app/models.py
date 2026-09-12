@@ -15,7 +15,8 @@ class Video(models.Model):
     title = models.CharField(max_length=100)
     description = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
-    thumbnail_url = models.URLField(max_length=200)
+    # Left blank on upload: the worker fills it with the generated thumbnail.
+    thumbnail_url = models.URLField(max_length=200, blank=True)
     category = models.CharField(max_length=40)
     video_file = models.FileField()
 
@@ -28,6 +29,9 @@ class Video(models.Model):
         return playlist
 
     def get_segment(self, resolution: "Video.Resolution", url_segment:str) -> Path:
-        video_path = Path(settings.MEDIA_ROOT) / "videos" / str(self.id) / resolution 
+        video_path = Path(settings.MEDIA_ROOT) / "videos" / str(self.id) / resolution
         segment = video_path / url_segment
         return segment
+
+    def get_thumbnail_path(self) -> Path:
+        return Path(settings.MEDIA_ROOT) / "videos" / str(self.id) / "thumbnail.jpg"
