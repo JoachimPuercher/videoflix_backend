@@ -1,3 +1,9 @@
+"""Views of the content API: video list and HLS streaming.
+
+All views require the JWT cookie. Files are served straight from
+MEDIA_ROOT with FileResponse; unknown ids, resolutions or files are a 404.
+"""
+
 from rest_framework import generics, status
 from rest_framework.response import Response
 from content_app.models import Video
@@ -10,20 +16,23 @@ from django.shortcuts import get_object_or_404
 
 
 class RetrieveVideoListView(generics.ListAPIView):
+    """GET /api/video/: all videos with their thumbnail URL."""
 
     permission_classes = [IsAuthenticated]
-    throttle_classes = [VideoListThrottle]
     queryset = Video.objects.all()
     serializer_class = VideoSerializer
+    throttle_classes = [VideoListThrottle]
 
 
 class HlsMasterPlaylistView(generics.views.APIView):
+    """GET /api/video/<movie_id>/<resolution>/index.m3u8: the HLS playlist."""
 
     permission_classes = [IsAuthenticated]
     throttle_classes = [ReceiveVideoRateThrottle]
 
     def get(self, request, *args, **kwargs):
-        movie_id = self.kwargs["movie_id"]   
+        """Whitelist the resolution, then stream the playlist file."""
+        movie_id = self.kwargs["movie_id"]
         video = get_object_or_404(Video, pk=movie_id)
         resolution = self.kwargs["resolution"]
 
@@ -39,12 +48,18 @@ class HlsMasterPlaylistView(generics.views.APIView):
 
 
 class HlsSegmentView(generics.views.APIView):
+    """GET /api/video/<movie_id>/<resolution>/<segment>/: one .ts segment.
+
+    The URL resolver already rejects a segment name containing a slash, so
+    the name can only address files inside the resolution folder.
+    """
 
     permission_classes = [IsAuthenticated]
     throttle_classes = [ReceiveVideoRateThrottle]
 
     def get(self, request, *args, **kwargs):
-        movie_id = self.kwargs["movie_id"]   
+        """Whitelist the resolution, then stream the segment file."""
+        movie_id = self.kwargs["movie_id"]
         video = get_object_or_404(Video, pk=movie_id)
         resolution = self.kwargs["resolution"]
 

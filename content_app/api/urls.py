@@ -1,3 +1,9 @@
+"""Routes of the content API, mounted under /api/ in core/urls.py.
+
+The playlist references its segments by bare file name, so the segment
+route has to live directly beside the playlist route.
+"""
+
 from django.urls import path
 from .views import RetrieveVideoListView, HlsMasterPlaylistView, HlsSegmentView
 

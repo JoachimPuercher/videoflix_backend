@@ -1,10 +1,11 @@
+"""Admin registration for videos; uploading here starts the ffmpeg jobs."""
+
 from django.contrib import admin
 from content_app.models import Video
 
-# Register your models here.
 
 class VideoAdmin(admin.ModelAdmin):
+    """Show the id next to the title so API calls can be built from the list."""
     list_display = ["title", "pk", "description"]
-    pass
 
 admin.site.register(Video, VideoAdmin)

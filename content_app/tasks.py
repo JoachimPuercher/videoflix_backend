@@ -1,3 +1,10 @@
+"""ffmpeg jobs run by the rq worker after a video upload.
+
+Each job gets plain arguments (id or paths), never model instances, and
+runs ffmpeg as an argument list with check=True so failures land in the
+rq failed registry instead of leaving empty folders behind.
+"""
+
 import os
 import subprocess
 from pathlib import Path
@@ -61,13 +68,17 @@ def convert_to_hls(source_path, playlist_path, height: int):
     subprocess.run(cmd, capture_output=True, check=True)
 
 
+# One named job per resolution so the rq dashboard shows what is running.
 def convert480p(source_path, playlist_path):
+    """rq job: render the 480p HLS variant."""
     convert_to_hls(source_path, playlist_path, 480)
 
 
 def convert720p(source_path, playlist_path):
+    """rq job: render the 720p HLS variant."""
     convert_to_hls(source_path, playlist_path, 720)
 
 
 def convert1080p(source_path, playlist_path):
+    """rq job: render the 1080p HLS variant."""
     convert_to_hls(source_path, playlist_path, 1080)

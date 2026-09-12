@@ -1,10 +1,17 @@
+"""Video model plus the file layout of its rendered HLS output.
+
+Everything derived from an upload lives under
+MEDIA_ROOT/videos/<id>/: one folder per resolution with index.m3u8 and the
+.ts segments, and thumbnail.jpg next to them.
+"""
+
 from django.db import models
 from pathlib import Path
 from django.conf import settings
 
-# Create your models here.
 
 class Video(models.Model):
+    """An uploaded video; the worker renders the HLS variants after save."""
 
     class Resolution(models.TextChoices):
         """Resolutions the worker renders; also the whitelist for URL parameters."""
@@ -24,14 +31,17 @@ class Video(models.Model):
         return self.title
 
     def get_path(self, resolution: "Video.Resolution") -> Path:
-        video_path = Path(settings.MEDIA_ROOT) / "videos" / str(self.id) / resolution 
+        """Path of the HLS playlist for one resolution (may not exist yet)."""
+        video_path = Path(settings.MEDIA_ROOT) / "videos" / str(self.id) / resolution
         playlist = video_path / "index.m3u8"
         return playlist
 
     def get_segment(self, resolution: "Video.Resolution", url_segment:str) -> Path:
+        """Path of one .ts segment; url_segment must be validated by the caller."""
         video_path = Path(settings.MEDIA_ROOT) / "videos" / str(self.id) / resolution
         segment = video_path / url_segment
         return segment
 
     def get_thumbnail_path(self) -> Path:
+        """Path of the generated preview image."""
         return Path(settings.MEDIA_ROOT) / "videos" / str(self.id) / "thumbnail.jpg"

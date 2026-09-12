@@ -1,7 +1,11 @@
+"""Serializers of the content API."""
+
 from rest_framework import serializers
 from content_app.models import Video
 
+
 class VideoSerializer(serializers.ModelSerializer):
+    """Read-only list entry; video_file stays internal on purpose."""
 
     class Meta:
 
