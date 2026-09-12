@@ -20,7 +20,7 @@ from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework.renderers import TemplateHTMLRenderer, JSONRenderer
 import os
 from .authentication import JWTCookieAuthentication
-from .throtteling import (
+from .throttling import (
     ActivationThrottle,
     LoginThrottle,
     LogoutThrottle,

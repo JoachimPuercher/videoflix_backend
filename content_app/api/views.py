@@ -8,7 +8,7 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from content_app.models import Video
 from .serializers import VideoSerializer
-from .throtteling import ReceiveVideoRateThrottle, VideoListThrottle
+from .throttling import ReceiveVideoRateThrottle, VideoListThrottle
 from rest_framework.permissions import IsAuthenticated
 from content_app.models import Video
 from django.http import FileResponse, Http404
