@@ -64,6 +64,18 @@ class PasswordConfirmTest(AuthAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assert_password_unchanged()
 
+    def test_weak_password(self):
+        """A common, numeric or email-like password is rejected unchanged."""
+        for weak in ("12345678", "password1", "user@example.com"):
+            with self.subTest(password=weak):
+                payload = {"new_password": weak, "confirm_password": weak}
+                response = self.client.post(self.url, payload, format="json")
+                self.assertEqual(
+                    response.status_code, status.HTTP_400_BAD_REQUEST
+                )
+                self.assertIn("new_password", response.data)
+        self.assert_password_unchanged()
+
     def test_missing_field(self):
         """A payload without confirm_password is rejected."""
         response = self.client.post(

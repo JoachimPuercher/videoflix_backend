@@ -1,9 +1,21 @@
 """Serializers of the auth API: registration, login, password reset."""
 
+from django.contrib.auth import password_validation
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+
+def check_password_rules(password, user=None):
+    """Apply AUTH_PASSWORD_VALIDATORS and turn failures into DRF field errors."""
+    try:
+        password_validation.validate_password(password, user=user)
+    except DjangoValidationError as exc:
+        raise serializers.ValidationError(exc.messages)
+    return password
+
 
 class RegisterSerializer(serializers.ModelSerializer):
     """Create an inactive User from email, password and confirmed_password."""
@@ -28,6 +40,10 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.save()
 
         return user
+
+    def validate_password(self, value):
+        """Enforce the project password rules before anything is saved."""
+        return check_password_rules(value)
 
     def validate_email(self, value):
         """Reject duplicate addresses and store them lower cased."""
@@ -93,6 +109,10 @@ class ResetPasswordSerializer(serializers.Serializer):
 
     confirm_password = serializers.CharField(max_length=100, write_only=True)
     new_password = serializers.CharField(max_length=100, write_only=True)
+
+    def validate_new_password(self, value):
+        """Enforce the password rules, including similarity to the user's email."""
+        return check_password_rules(value, user=self.context["user"])
 
     def validate(self, values):
         """Both password fields have to match."""

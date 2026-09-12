@@ -112,6 +112,22 @@ class RegisterTest(AuthAPITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_weak_password(self):
+        """Passwords that fail AUTH_PASSWORD_VALIDATORS are rejected."""
+        for weak in ("12345678", "password1", "short"):
+            with self.subTest(password=weak):
+                payload = {
+                    **self.correct_payload,
+                    "password": weak,
+                    "confirmed_password": weak,
+                }
+                response = self.client.post(self.url, payload, format="json")
+                self.assertEqual(
+                    response.status_code, status.HTTP_400_BAD_REQUEST
+                )
+                self.assertIn("password", response.data)
+        self.assertEqual(User.objects.count(), 0)
+
     def test_passwords_mismatch(self):
         """Different password fields are rejected."""
         response = self.client.post(
