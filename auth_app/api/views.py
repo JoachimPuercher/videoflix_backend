@@ -5,21 +5,19 @@ login, logout, token refresh and password reset. Tokens travel only as
 HttpOnly cookies; mails are sent through rq jobs.
 """
 
-from django.shortcuts import render
 from rest_framework import generics, status, views
 from rest_framework.authtoken.models import Token
-from rest_framework.permissions import AllowAny, IsAuthenticated, SAFE_METHODS
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from .serializers import RegisterSerializer, EmailTokenObtainPairSerializer, EmailSerializer, ResetPasswordSerializer
 from django.contrib.auth.tokens import default_token_generator
-from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
 from django.contrib.auth.models import User
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenBlacklistView
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework.renderers import TemplateHTMLRenderer, JSONRenderer
 import os
-from .authentication import JWTCookieAuthentication
 from .throttling import (
     ActivationThrottle,
     LoginThrottle,
@@ -69,7 +67,6 @@ class LoginView(TokenObtainPairView):
     authentication_classes = []
     permission_classes = [AllowAny]
     throttle_classes = [LoginThrottle]
-
     serializer_class = EmailTokenObtainPairSerializer
 
     def post(self, request, *args, **kwargs):
@@ -130,7 +127,6 @@ class LogoutView(TokenBlacklistView):
 
     def post(self, request, *args, **kwargs) -> Response:
         """Blacklist the refresh token; an invalid one still clears the cookies."""
-        print(request.COOKIES)
         try:
             refresh_token = request.COOKIES.get("refresh_token")
             serializer = self.get_serializer(data={"refresh" : refresh_token})
@@ -167,7 +163,7 @@ class CookieTokenRefreshView(TokenRefreshView):
 
         try:
             serializer.is_valid(raise_exception=True)
-        except:
+        except TokenError:
 
             response = Response(
                 {"message" : "Refresh token not found!"},

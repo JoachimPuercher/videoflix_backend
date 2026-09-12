@@ -4,8 +4,7 @@ All views require the JWT cookie. Files are served straight from
 MEDIA_ROOT with FileResponse; unknown ids, resolutions or files are a 404.
 """
 
-from rest_framework import generics, status
-from rest_framework.response import Response
+from rest_framework import generics
 from content_app.models import Video
 from .serializers import VideoSerializer
 from .throttling import ReceiveVideoRateThrottle, VideoListThrottle
