@@ -14,7 +14,7 @@ NEW_PASSWORD = "brandnewpassword"
 
 def confirm_url(uidb64, token):
     return reverse(
-        "password_reset", kwargs={"uidb64": uidb64, "token": token}
+        "password_confirm", kwargs={"uidb64": uidb64, "token": token}
     )
 
 
