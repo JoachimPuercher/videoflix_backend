@@ -221,9 +221,25 @@ class UserActivationView(views.APIView):
                     else:
                         return Response({"message": "Account successfully activated."}, status=status.HTTP_200_OK)
                 else:
-                    return Response(data={"error" : "Activation failed!"}, status=status.HTTP_400_BAD_REQUEST)    
-            except:
-                return Response(data={"error" : "Activation failed!"}, status=status.HTTP_400_BAD_REQUEST)
+                    return self.failed(request)
+            except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+                return self.failed(request)
+
+    def failed(self, request):
+        """400 for every invalid link: a page for browsers, JSON for API clients."""
+        if request.accepted_renderer.format == 'html':
+            template_data = {
+                "title": "Activation failed",
+                "message": "This activation link is invalid or has expired. "
+                           "Please register again to receive a new one.",
+                "FRONTEND_URL": f"{os.getenv('FRONTEND_URL')}/pages/auth/register.html",
+            }
+            return Response(
+                template_data,
+                template_name='activation_failed.html',
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response(data={"error": "Activation failed!"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class PasswordResetView(views.APIView):

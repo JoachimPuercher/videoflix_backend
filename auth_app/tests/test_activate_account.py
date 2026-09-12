@@ -62,6 +62,17 @@ class ActivateAccountTest(AuthAPITestCase):
         self.assertTemplateUsed(response, "activation_result.html")
         self.assertContains(response, "Account successfully activated.")
 
+    def test_browser_gets_html_error_page(self):
+        """An invalid link opened in a browser renders the failure page."""
+        response = self.client.get(
+            activation_url(self.uidb64, "abc-def"), HTTP_ACCEPT="text/html"
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTemplateUsed(response, "activation_failed.html")
+        self.assertContains(
+            response, "Activation failed", status_code=status.HTTP_400_BAD_REQUEST
+        )
+
     def test_invalid_token_returns_400(self):
         """A tampered token is rejected and the user stays inactive."""
         response = self.get_json(activation_url(self.uidb64, "abc-def"))
