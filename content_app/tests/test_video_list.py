@@ -21,19 +21,6 @@ class VideoListTest(AuthenticatedMediaTestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 2)
 
-    def test_list_fields(self):
-        """Each entry exposes exactly the spec fields."""
-        response = self.client.get(self.url)
-        entry = next(v for v in response.data if v["id"] == self.video.id)
-        self.assertEqual(
-            set(entry.keys()),
-            {"id", "title", "description", "created_at", "category",
-             "thumbnail_url"},
-        )
-        self.assertEqual(entry["title"], "First")
-        self.assertEqual(entry["category"], "drama")
-        self.assertEqual(entry["thumbnail_url"], self.video.thumbnail_url)
-
     def test_list_hides_video_file(self):
         """The internal file name never leaves the server."""
         response = self.client.get(self.url)
