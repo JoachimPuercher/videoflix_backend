@@ -27,7 +27,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY')
-CSRF_TRUSTED_ORIGINS = os.environ.get("CSRF_TRUSTED_ORIGINS", default="http://localhost:4200").split(",")
+CSRF_TRUSTED_ORIGINS = os.environ.get(
+    "CSRF_TRUSTED_ORIGINS",
+    default="http://localhost:4200").split(",")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG') == "True"
@@ -95,7 +97,8 @@ INTERNAL_IPS = [
 # Only safe inside a container, see:
 # https://django-debug-toolbar.readthedocs.io/en/latest/installation.html#configure-internal-ips
 DEBUG_TOOLBAR_CONFIG = {
-    'SHOW_TOOLBAR_CALLBACK': 'debug_toolbar.middleware.show_toolbar_with_docker',
+    'SHOW_TOOLBAR_CALLBACK':
+        'debug_toolbar.middleware.show_toolbar_with_docker',
 }
 
 
@@ -107,7 +110,9 @@ DATABASES = {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": os.environ.get("DB_NAME", default="videoflix_db"),
         "USER": os.environ.get("DB_USER", default="videoflix_user"),
-        "PASSWORD": os.environ.get("DB_PASSWORD", default="supersecretpassword"),
+        "PASSWORD": os.environ.get(
+            "DB_PASSWORD", default="supersecretpassword"
+        ),
         "HOST": os.environ.get("DB_HOST", default="db"),
         "PORT": os.environ.get("DB_PORT", default=5432)
     }
@@ -116,13 +121,12 @@ DATABASES = {
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": os.environ.get("REDIS_LOCATION", default="redis://redis:6379/1"),
+        "LOCATION": os.environ.get(
+            "REDIS_LOCATION",
+            default="redis://redis:6379/1"),
         "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient"
-        },
-        "KEY_PREFIX": "videoflix"
-    }
-}
+            "CLIENT_CLASS": "django_redis.client.DefaultClient"},
+        "KEY_PREFIX": "videoflix"}}
 
 RQ_QUEUES = {
     'default': {
@@ -137,19 +141,13 @@ RQ_QUEUES = {
 # Password validation
 # https://docs.djangoproject.com/en/6.1/ref/settings/#auth-password-validators
 
+PASSWORD_VALIDATION = 'django.contrib.auth.password_validation.'
+
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': PASSWORD_VALIDATION + 'UserAttributeSimilarityValidator'},
+    {'NAME': PASSWORD_VALIDATION + 'MinimumLengthValidator'},
+    {'NAME': PASSWORD_VALIDATION + 'CommonPasswordValidator'},
+    {'NAME': PASSWORD_VALIDATION + 'NumericPasswordValidator'},
 ]
 
 PASSWORD_RESET_TIMEOUT = 60 * 60 * 24.
@@ -221,9 +219,9 @@ REST_FRAMEWORK = {
         'activate': '10/hour',         # link guessing
         'login': '10/min',             # brute force
         'logout': '10/min',
-        'token_refresh': '30/min',     # frontend refreshes every 5 minutes per tab
+        'token_refresh': '30/min',     # frontend refreshes every 5 min per tab
         'password_reset': '5/hour',    # every call may send a mail
-        'password_confirm': '10/hour', # token guessing
+        'password_confirm': '10/hour',  # token guessing
         'video_list': '100/hour',      # one call per page load
         'receive_video': '10000/day',  # a 90 min film is ~600 segment requests
     }
@@ -232,6 +230,6 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
-    }
+}
 
 CORS_ALLOW_CREDENTIALS = True

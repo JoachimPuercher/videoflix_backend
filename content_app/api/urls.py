@@ -9,7 +9,16 @@ from .views import RetrieveVideoListView, HlsMasterPlaylistView, HlsSegmentView
 
 
 urlpatterns = [
-    path('video/', RetrieveVideoListView.as_view(), name='video_list'),
-    path('video/<int:movie_id>/<str:resolution>/index.m3u8', HlsMasterPlaylistView.as_view(), name='hls_manifest'),
-    path('video/<int:movie_id>/<str:resolution>/<str:segment>/', HlsSegmentView.as_view(), name='hls_segment'),
+    path(
+        'video/',
+        RetrieveVideoListView.as_view(),
+        name='video_list'),
+    path(
+        'video/<int:movie_id>/<str:resolution>/index.m3u8',
+        HlsMasterPlaylistView.as_view(),
+        name='hls_manifest'),
+    path(
+        'video/<int:movie_id>/<str:resolution>/<str:segment>/',
+        HlsSegmentView.as_view(),
+        name='hls_segment'),
 ]

@@ -42,8 +42,12 @@ class HlsMasterPlaylistView(generics.views.APIView):
 
         if not movie_path.is_file():
             raise Http404
-            
-        return FileResponse(open(movie_path, "rb"), content_type="application/vnd.apple.mpegurl")
+
+        return FileResponse(
+            open(
+                movie_path,
+                "rb"),
+            content_type="application/vnd.apple.mpegurl")
 
 
 class HlsSegmentView(generics.views.APIView):
@@ -70,5 +74,6 @@ class HlsSegmentView(generics.views.APIView):
 
         if not segment_path.is_file():
             raise Http404
-            
-        return FileResponse(open(segment_path, "rb"), content_type="video/MP2T")
+
+        return FileResponse(open(segment_path, "rb"),
+                            content_type="video/MP2T")

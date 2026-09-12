@@ -5,7 +5,8 @@ from content_app.models import Video
 
 
 class VideoAdmin(admin.ModelAdmin):
-    """Show the id next to the title so API calls can be built from the list."""
+    """Show the id next to the title so API calls can be built from it."""
     list_display = ["title", "pk", "description"]
+
 
 admin.site.register(Video, VideoAdmin)

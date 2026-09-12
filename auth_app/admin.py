@@ -13,4 +13,5 @@ class VideoflixUserAdmin(UserAdmin):
 
     list_display = UserAdmin.list_display + ("is_active",)
 
+
 admin.site.register(User, VideoflixUserAdmin)

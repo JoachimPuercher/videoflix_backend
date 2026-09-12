@@ -14,10 +14,12 @@ from rest_framework.request import Request
 
 from rest_framework_simplejwt.tokens import Token, AuthUser
 
+
 class JWTCookieAuthentication(JWTAuthentication):
     """Authenticate with the access_token cookie instead of a header."""
 
-    def authenticate(self, request: Request) -> Optional[tuple[AuthUser, Token]]:
+    def authenticate(
+            self, request: Request) -> Optional[tuple[AuthUser, Token]]:
         """Return (user, token) for a valid cookie, None if no cookie is sent.
 
         An invalid or expired token raises InvalidToken (401) through
@@ -31,11 +33,13 @@ class JWTCookieAuthentication(JWTAuthentication):
 
         return self.get_user(validated_token), validated_token
 
+
 class JWTCookieRefreshAuthentication(JWTAuthentication):
-    """Unused copy of JWTCookieAuthentication; kept for a later refresh flow."""
+    """Unused copy of JWTCookieAuthentication, kept for a refresh flow."""
 
-    def authenticate(self, request: Request) -> Optional[tuple[AuthUser, Token]]:
-
+    def authenticate(
+            self, request: Request) -> Optional[tuple[AuthUser, Token]]:
+        """Same as JWTCookieAuthentication.authenticate."""
         raw_token = request.COOKIES.get("access_token")
         if raw_token is None:
             return None
@@ -43,4 +47,3 @@ class JWTCookieRefreshAuthentication(JWTAuthentication):
         validated_token = self.get_validated_token(raw_token)
 
         return self.get_user(validated_token), validated_token
-    

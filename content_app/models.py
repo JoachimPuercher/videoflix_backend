@@ -14,7 +14,7 @@ class Video(models.Model):
     """An uploaded video; the worker renders the HLS variants after save."""
 
     class Resolution(models.TextChoices):
-        """Resolutions the worker renders; also the whitelist for URL parameters."""
+        """Rendered resolutions; also the whitelist for URL parameters."""
         P480 = "480p"
         P720 = "720p"
         P1080 = "1080p"
@@ -32,16 +32,22 @@ class Video(models.Model):
 
     def get_path(self, resolution: "Video.Resolution") -> Path:
         """Path of the HLS playlist for one resolution (may not exist yet)."""
-        video_path = Path(settings.MEDIA_ROOT) / "videos" / str(self.id) / resolution
+        video_path = Path(settings.MEDIA_ROOT) / "videos" / \
+            str(self.id) / resolution
         playlist = video_path / "index.m3u8"
         return playlist
 
-    def get_segment(self, resolution: "Video.Resolution", url_segment:str) -> Path:
-        """Path of one .ts segment; url_segment must be validated by the caller."""
-        video_path = Path(settings.MEDIA_ROOT) / "videos" / str(self.id) / resolution
+    def get_segment(
+            self,
+            resolution: "Video.Resolution",
+            url_segment: str) -> Path:
+        """Path of one .ts segment; the caller validates url_segment."""
+        video_path = Path(settings.MEDIA_ROOT) / "videos" / \
+            str(self.id) / resolution
         segment = video_path / url_segment
         return segment
 
     def get_thumbnail_path(self) -> Path:
         """Path of the generated preview image."""
-        return Path(settings.MEDIA_ROOT) / "videos" / str(self.id) / "thumbnail.jpg"
+        return Path(settings.MEDIA_ROOT) / "videos" / \
+            str(self.id) / "thumbnail.jpg"

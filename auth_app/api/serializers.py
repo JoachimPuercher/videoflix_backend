@@ -9,7 +9,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
 def check_password_rules(password, user=None):
-    """Apply AUTH_PASSWORD_VALIDATORS and turn failures into DRF field errors."""
+    """Run AUTH_PASSWORD_VALIDATORS and map failures to DRF field errors."""
     try:
         password_validation.validate_password(password, user=user)
     except DjangoValidationError as exc:
@@ -30,7 +30,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         }
 
     def save(self):
-        """Create the user with a hashed password; the email doubles as username."""
+        """Create the user with a hashed password; email is the username."""
         user = User(
             username=self.validated_data['email'],
             email=self.validated_data['email'],
@@ -94,7 +94,8 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
         if not user.check_password(password) or not user.is_active:
             raise AuthenticationFailed("Invalid email or password.")
 
-        data = super().validate({"username": user.username, "password": password})
+        data = super().validate(
+            {"username": user.username, "password": password})
         return data
 
 
@@ -111,7 +112,7 @@ class ResetPasswordSerializer(serializers.Serializer):
     new_password = serializers.CharField(max_length=100, write_only=True)
 
     def validate_new_password(self, value):
-        """Enforce the password rules, including similarity to the user's email."""
+        """Enforce the password rules, incl. similarity to the user's email."""
         return check_password_rules(value, user=self.context["user"])
 
     def validate(self, values):

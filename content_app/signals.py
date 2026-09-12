@@ -19,9 +19,19 @@ def video_post_save(sender, instance, created, **kwargs):
         source_path = instance.video_file.path
         queue = django_rq.get_queue('default', autocommit=True)
         queue.enqueue(create_thumbnail, instance.id)
-        queue.enqueue(convert480p, source_path, instance.get_path(Video.Resolution.P480))
-        queue.enqueue(convert720p, source_path, instance.get_path(Video.Resolution.P720))
-        queue.enqueue(convert1080p, source_path, instance.get_path(Video.Resolution.P1080), job_timeout=1800)
-
-
-
+        queue.enqueue(
+            convert480p,
+            source_path,
+            instance.get_path(
+                Video.Resolution.P480))
+        queue.enqueue(
+            convert720p,
+            source_path,
+            instance.get_path(
+                Video.Resolution.P720))
+        queue.enqueue(
+            convert1080p,
+            source_path,
+            instance.get_path(
+                Video.Resolution.P1080),
+            job_timeout=1800)
