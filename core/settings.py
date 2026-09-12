@@ -207,7 +207,24 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.MultiPartRenderer',
         'rest_framework.renderers.JSONRenderer',
         'rest_framework.renderers.TemplateHTMLRenderer'
-    ]
+    ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/day',
+        'user': '1000/day',
+        'register': '5/hour',          # creates accounts and sends mails
+        'activate': '10/hour',         # link guessing
+        'login': '10/min',             # brute force
+        'logout': '10/min',
+        'token_refresh': '30/min',     # frontend refreshes every 5 minutes per tab
+        'password_reset': '5/hour',    # every call may send a mail
+        'password_confirm': '10/hour', # token guessing
+        'video_list': '100/hour',      # one call per page load
+        'receive_video': '10000/day',  # a 90 min film is ~600 segment requests
+    }
 }
 
 SIMPLE_JWT = {

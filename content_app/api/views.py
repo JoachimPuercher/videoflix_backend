@@ -2,6 +2,7 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from content_app.models import Video
 from .serializers import VideoSerializer
+from .throtteling import ReceiveVideoRateThrottle, VideoListThrottle
 from rest_framework.permissions import IsAuthenticated
 from content_app.models import Video
 from django.http import FileResponse, Http404
@@ -11,6 +12,7 @@ from django.shortcuts import get_object_or_404
 class RetrieveVideoListView(generics.ListAPIView):
 
     permission_classes = [IsAuthenticated]
+    throttle_classes = [VideoListThrottle]
     queryset = Video.objects.all()
     serializer_class = VideoSerializer
 
@@ -18,6 +20,7 @@ class RetrieveVideoListView(generics.ListAPIView):
 class HlsMasterPlaylistView(generics.views.APIView):
 
     permission_classes = [IsAuthenticated]
+    throttle_classes = [ReceiveVideoRateThrottle]
 
     def get(self, request, *args, **kwargs):
         movie_id = self.kwargs["movie_id"]   
@@ -38,6 +41,7 @@ class HlsMasterPlaylistView(generics.views.APIView):
 class HlsSegmentView(generics.views.APIView):
 
     permission_classes = [IsAuthenticated]
+    throttle_classes = [ReceiveVideoRateThrottle]
 
     def get(self, request, *args, **kwargs):
         movie_id = self.kwargs["movie_id"]   

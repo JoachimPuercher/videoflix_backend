@@ -20,6 +20,15 @@ from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework.renderers import TemplateHTMLRenderer, JSONRenderer
 import os
 from .authentication import JWTCookieAuthentication
+from .throtteling import (
+    ActivationThrottle,
+    LoginThrottle,
+    LogoutThrottle,
+    PasswordConfirmThrottle,
+    PasswordResetThrottle,
+    RegisterThrottle,
+    TokenRefreshThrottle,
+)
 from auth_app.tasks import trigger_mail_verification, trigger_password_reset
 import django_rq
 from auth_app.tasks import trigger_password_reset
@@ -30,6 +39,7 @@ class RegistrationView(generics.CreateAPIView):
 
     authentication_classes = []
     permission_classes = [AllowAny]
+    throttle_classes = [RegisterThrottle]
     serializer_class = RegisterSerializer
 
     def create(self, request):
@@ -58,6 +68,7 @@ class LoginView(TokenObtainPairView):
 
     authentication_classes = []
     permission_classes = [AllowAny]
+    throttle_classes = [LoginThrottle]
 
     serializer_class = EmailTokenObtainPairSerializer
 
@@ -115,6 +126,7 @@ class LogoutView(TokenBlacklistView):
 
     authentication_classes = []
     permission_classes = [AllowAny]
+    throttle_classes = [LogoutThrottle]
 
     def post(self, request, *args, **kwargs) -> Response:
         """Blacklist the refresh token; an invalid one still clears the cookies."""
@@ -139,6 +151,7 @@ class CookieTokenRefreshView(TokenRefreshView):
 
     authentication_classes = []
     permission_classes = [AllowAny]
+    throttle_classes = [TokenRefreshThrottle]
 
     def post(self, request, *args, **kwargs):
         """400 without cookie, 401 with an invalid one (cookies cleared), else 200."""
@@ -185,6 +198,7 @@ class UserActivationView(views.APIView):
 
     authentication_classes = []
     permission_classes = [AllowAny]
+    throttle_classes = [ActivationThrottle]
     renderer_classes = [JSONRenderer, TemplateHTMLRenderer]
 
     def get(self, request, *args, **kwargs):
@@ -225,6 +239,7 @@ class PasswordResetView(views.APIView):
 
     authentication_classes = []
     permission_classes = [AllowAny]
+    throttle_classes = [PasswordResetThrottle]
 
     def post(self, request, *args, **kwargs):
         """Validate the address and hand the lookup and mail to the worker."""
@@ -245,6 +260,7 @@ class PasswordConfirmView(views.APIView):
 
     authentication_classes = []
     permission_classes = [AllowAny]
+    throttle_classes = [PasswordConfirmThrottle]
 
     def post(self, request, *args, **kwargs):
         """Resolve the user, verify the token, then validate and save the password."""
