@@ -53,7 +53,7 @@ def send_password_reset_mail(uidb64, user_email, verify_token):
     msg.send()
 
 
-def send_order_confirmation(uidb64, user_email, user_username, verify_token,):
+def send_activation_mail(uidb64, user_email, user_username, verify_token,):
     """Send the activation mail; the link points straight to the API."""
     BACKEND_URL=os.getenv('BACKEND_URL')
     FRONTEND_URL=os.getenv('FRONTEND_URL')
@@ -108,4 +108,4 @@ def trigger_mail_verification(user_id, verify_token):
     user = User.objects.get(pk=user_id)
     user_bytes = force_bytes(user.id)
     uidb64 = urlsafe_base64_encode(user_bytes)
-    send_order_confirmation(uidb64, user.email, user.username, verify_token)
+    send_activation_mail(uidb64, user.email, user.username, verify_token)
