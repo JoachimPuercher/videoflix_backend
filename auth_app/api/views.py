@@ -10,7 +10,7 @@ from django.utils.encoding import force_str
 from django.contrib.auth.models import User
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenBlacklistView
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
-from rest_framework.renderers import TemplateHTMLRenderer
+from rest_framework.renderers import TemplateHTMLRenderer, JSONRenderer
 import os
 from .authentication import JWTCookieAuthentication
 from auth_app.tasks import trigger_mail_verification, trigger_password_reset
@@ -165,7 +165,7 @@ class UserActivationView(views.APIView):
 
     authentication_classes = []
     permission_classes = [AllowAny]
-    renderer_classes = [TemplateHTMLRenderer]
+    renderer_classes = [JSONRenderer, TemplateHTMLRenderer]
 
     def get(self, request, *args, **kwargs):
 
