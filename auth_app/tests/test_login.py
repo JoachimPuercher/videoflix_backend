@@ -91,7 +91,7 @@ class LoginTest(APITestCase):
         response = self.client.post(
             self.url, self.wrong_password, format="json"
         )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertNotIn("access_token", response.cookies)
         self.assertNotIn("refresh_token", response.cookies)
 
@@ -100,7 +100,7 @@ class LoginTest(APITestCase):
         response = self.client.post(
             self.url, self.unknown_email, format="json"
         )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_unknown_email_and_wrong_password_look_the_same(self):
         """The error does not reveal whether the address exists."""
