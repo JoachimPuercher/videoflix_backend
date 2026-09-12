@@ -86,7 +86,10 @@ def send_order_confirmation(uidb64, user_email, user_username, verify_token,):
 
 
 def trigger_password_reset(user_mail):
-    user = User.objects.get(email=user_mail)
+    user = User.objects.filter(email=user_mail).first()
+    if user is None:
+        # Unknown address: nothing to send, and no failed job in the registry.
+        return
     verify_token = default_token_generator.make_token(user)
     user_bytes = force_bytes(user.id)
     uidb64 = urlsafe_base64_encode(user_bytes)
