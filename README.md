@@ -8,6 +8,7 @@ stream uploaded videos as HLS in 480p, 720p and 1080p.
 
 - Python 3.12, Django, Django REST Framework, Simple JWT (HttpOnly cookies)
 - PostgreSQL, Redis + django-rq (background jobs), ffmpeg (HLS transcoding)
+- Pillow (validation and re-encoding of uploaded thumbnails)
 - Docker Compose (services `db`, `redis`, `web`)
 
 ## Prerequisites
@@ -64,7 +65,7 @@ Compose network.
 | `REDIS_HOST`, `REDIS_PORT`, `REDIS_DB`, `REDIS_LOCATION` | Redis for rq and cache |
 | `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `EMAIL_USE_SSL`, `DEFAULT_FROM_EMAIL` | SMTP for activation and reset mails |
 | `FRONTEND_URL` | Base URL of the frontend, used in mail links |
-| `BACKEND_URL` | Base URL of this API, used for the activation link |
+| `BACKEND_URL` | Base URL of this API, used for the activation link and the thumbnail URLs |
 
 ## API
 
@@ -87,16 +88,32 @@ All endpoints live under `/api/`. Authenticated endpoints expect the JWT
 
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
-| GET | `video/` | yes | List all videos |
+| GET | `video/` | yes | List all videos with their thumbnail URL |
+| GET | `video/<movie_id>/thumbnail.jpg` | no | Preview image (JPEG); public so plain `<img>` tags can load it |
 | GET | `video/<movie_id>/<resolution>/index.m3u8` | yes | HLS playlist for `480p`, `720p` or `1080p` |
 | GET | `video/<movie_id>/<resolution>/<segment>/` | yes | One `.ts` segment referenced by the playlist |
 
 ## Background processing
 
 Uploading a video (currently via the admin) fires a `post_save` signal that
-enqueues three rq jobs. Each job runs ffmpeg and writes an HLS playlist plus
-segments to `media/videos/<id>/<resolution>/`. Progress and failures are visible
-in the rq dashboard and in `docker compose logs web`.
+enqueues three rq jobs, one per resolution. Each job runs ffmpeg and writes an
+HLS playlist plus segments to `media/videos/<id>/<resolution>/`. Progress and
+failures are visible in the rq dashboard and in `docker compose logs web`.
+
+### Thumbnails
+
+Every video gets a preview image, served by `video/<movie_id>/thumbnail.jpg`;
+its absolute URL is stored in the `thumbnail_url` field, which the admin hides
+when a video is added.
+
+- **Uploaded in the admin (optional):** the file must be a JPEG, PNG or WebP of
+  at most 25 megapixels that Pillow can decode completely, otherwise the form
+  shows an error. It is not stored as uploaded but re-encoded as a fresh JPEG
+  in `media/thumbnails/`, which drops metadata and anything hidden in the file.
+  The URL is set right after saving.
+- **No upload:** a fourth rq job grabs a frame at 6 seconds with ffmpeg and
+  writes `media/videos/<id>/thumbnail.jpg`. The URL is set once the job has
+  finished.
 
 Mails are sent through rq jobs as well, so requests do not wait for SMTP.
 
@@ -118,7 +135,7 @@ itself always runs in Docker.
 ```
 core/            settings, root urls, wsgi
 auth_app/        registration, activation, login, password reset, mail tasks
-content_app/     video model, signals, ffmpeg tasks, streaming endpoints
+content_app/     video model, signals, ffmpeg tasks, thumbnail checks, streaming endpoints
 <app>/api/       serializers, views and urls of the REST API
 <app>/tests/     tests
 backend.Dockerfile, backend.entrypoint.sh, docker-compose.yml
