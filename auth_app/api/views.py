@@ -50,7 +50,7 @@ class RegistrationView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
 
     def create(self, request):
-        """Save the user, enqueue the mail job and echo id, email and token."""
+        """Save the user, enqueue the mail job and echo id and email."""
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             user = serializer.save()
@@ -63,7 +63,6 @@ class RegistrationView(generics.CreateAPIView):
                     "id": user.id,
                     "email": user.email,
                 },
-                "token": verify_token
             }
 
             return Response(data, status=status.HTTP_201_CREATED)
@@ -196,8 +195,7 @@ class CookieTokenRefreshView(TokenRefreshView):
             return response
 
         access_token = serializer.validated_data.get("access")
-        response = Response({"detail": "Token refreshed.",
-                            "access": "new_access_token"})
+        response = Response({"detail": "Token refreshed."})
 
         response.set_cookie(
             key="access_token",

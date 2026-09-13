@@ -1,7 +1,6 @@
 """Tests for POST /api/register/."""
 
 from django.contrib.auth.models import User
-from django.contrib.auth.tokens import default_token_generator
 from django.core import mail
 from django.test import override_settings
 from django.urls import reverse
@@ -45,23 +44,19 @@ class RegisterTest(AuthAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_register_response_body(self):
-        """The body matches the spec: user id and email plus a valid token."""
+        """The body carries user id and email, but no password and no token."""
         response = self.client.post(
             self.url, self.correct_payload, format="json"
         )
         user = User.objects.get(email=self.correct_payload["email"])
 
-        self.assertEqual(set(response.data.keys()), {"user", "token"})
+        self.assertEqual(set(response.data.keys()), {"user"})
         self.assertEqual(
             response.data["user"], {"id": user.id, "email": user.email}
         )
         self.assertNotIn("password", response.data)
         self.assertNotIn("password", response.data["user"])
-
-        self.assertIsInstance(response.data["token"], str)
-        self.assertTrue(
-            default_token_generator.check_token(user, response.data["token"])
-        )
+        self.assertNotIn("token", response.data)
 
     def test_activation_mail_is_sent(self):
         """Exactly one activation mail goes to the registered address."""
