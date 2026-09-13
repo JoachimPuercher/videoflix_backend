@@ -118,6 +118,18 @@ class LoginTest(AuthAPITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_login_is_throttled(self):
+        """After the configured number of attempts the login answers 429."""
+        for _ in range(10):
+            self.client.post(self.url, self.wrong_password, format="json")
+        response = self.client.post(
+            self.url, self.correct_payload, format="json"
+        )
+        self.assertEqual(
+            response.status_code, status.HTTP_429_TOO_MANY_REQUESTS
+        )
+        self.assertNotIn("access_token", response.cookies)
+
     def test_inactive_user_cannot_login(self):
         """An account that was never activated gets no tokens."""
         self.user.is_active = False

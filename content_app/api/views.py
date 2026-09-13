@@ -9,6 +9,7 @@ from pathlib import Path
 from rest_framework import generics
 from content_app.models import Video
 from .serializers import VideoSerializer
+from .throttling import ReceiveVideoRateThrottle, VideoListThrottle
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from content_app.models import Video
 from django.http import FileResponse, Http404
@@ -21,12 +22,14 @@ class RetrieveVideoListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     queryset = Video.objects.all()
     serializer_class = VideoSerializer
+    throttle_classes = [VideoListThrottle]
 
 
 class HlsMasterPlaylistView(generics.views.APIView):
     """GET /api/video/<movie_id>/<resolution>/index.m3u8: the HLS playlist."""
 
     permission_classes = [IsAuthenticated]
+    throttle_classes = [ReceiveVideoRateThrottle]
 
     def get(self, request, *args, **kwargs):
         """Whitelist the resolution, then stream the playlist file."""
@@ -57,6 +60,7 @@ class HlsSegmentView(generics.views.APIView):
     """
 
     permission_classes = [IsAuthenticated]
+    throttle_classes = [ReceiveVideoRateThrottle]
 
     def get(self, request, *args, **kwargs):
         """Whitelist the resolution, then stream the segment file."""
@@ -89,6 +93,7 @@ class VideoThumbnailView(generics.views.APIView):
 
     authentication_classes = []
     permission_classes = [AllowAny]
+    throttle_classes = [ReceiveVideoRateThrottle]
 
     def get(self, request, *args, **kwargs):
         """Stream the thumbnail; 404 if there is none (yet)."""

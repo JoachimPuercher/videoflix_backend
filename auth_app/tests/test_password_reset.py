@@ -67,6 +67,16 @@ class PasswordResetTest(AuthAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(mail.outbox), 0)
 
+    def test_reset_is_throttled(self):
+        """After the configured number of requests no further mail is sent."""
+        for _ in range(5):
+            self.client.post(self.url, {"email": EMAIL}, format="json")
+        response = self.client.post(self.url, {"email": EMAIL}, format="json")
+        self.assertEqual(
+            response.status_code, status.HTTP_429_TOO_MANY_REQUESTS
+        )
+        self.assertEqual(len(mail.outbox), 5)
+
     def test_missing_email(self):
         """An empty payload sends nothing."""
         response = self.client.post(self.url, {}, format="json")
