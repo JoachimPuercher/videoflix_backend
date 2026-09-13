@@ -104,5 +104,5 @@ class VideoThumbnailView(generics.views.APIView):
         response = FileResponse(open(thumbnail_path, "rb"),
                                 content_type="image/jpeg")
         # Let browsers and proxies keep it for a day.
-        response["Cache-Control"] = "public, max-age=86400"
+        # response["Cache-Control"] = "public, max-age=86400"
         return response
