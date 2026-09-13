@@ -2,18 +2,21 @@
 
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
+from django.core import mail
+from django.test import override_settings
 from django.urls import reverse
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from rest_framework import status
 
-from .utils import AuthAPITestCase
+from .utils import SYNC_RQ, AuthAPITestCase
 
 
 def activation_url(uidb64, token):
     return reverse("activate", kwargs={"uidb64": uidb64, "token": token})
 
 
+@override_settings(RQ_QUEUES=SYNC_RQ)
 class ActivateAccountTest(AuthAPITestCase):
     """The mail link activates exactly the user it was issued for."""
 
@@ -80,6 +83,20 @@ class ActivateAccountTest(AuthAPITestCase):
         self.user.refresh_from_db()
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIs(self.user.is_active, False)
+
+    def test_invalid_link_resends_mail_to_inactive_user(self):
+        """A pending account gets a fresh link; it cannot register again."""
+        self.get_json(activation_url(self.uidb64, "abc-def"))
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, [self.user.email])
+
+    def test_invalid_link_sends_nothing_to_active_user(self):
+        """An account that is already active needs no new link."""
+        self.user.is_active = True
+        self.user.save(update_fields=["is_active"])
+        response = self.get_json(activation_url(self.uidb64, "abc-def"))
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(len(mail.outbox), 0)
 
     def test_token_of_other_user_returns_400(self):
         """A token issued for another account does not activate this one."""

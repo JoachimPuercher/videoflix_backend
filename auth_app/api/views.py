@@ -248,6 +248,13 @@ class UserActivationView(views.APIView):
                         status=status.HTTP_200_OK,
                     )
             else:
+                if not user.is_active:
+                    # The address is taken, so the user cannot register
+                    # again: send a fresh link instead.
+                    new_token = default_token_generator.make_token(user)
+                    queue = django_rq.get_queue('default', autocommit=True)
+                    queue.enqueue(
+                        trigger_mail_verification, user.id, new_token)
                 return self.failed(request)
         except (TypeError, ValueError, OverflowError, User.DoesNotExist):
             return self.failed(request)
@@ -259,8 +266,9 @@ class UserActivationView(views.APIView):
             template_data = {
                 "title": "Activation failed",
                 "message": "This activation link is invalid or has expired. "
-                           "Please register again to receive a new one.",
-                "FRONTEND_URL": f"{frontend}/pages/auth/register.html",
+                           "If your account is still waiting for activation, "
+                           "a new link is on its way to your inbox.",
+                "FRONTEND_URL": f"{frontend}/pages/auth/login.html",
             }
             return Response(
                 template_data,
