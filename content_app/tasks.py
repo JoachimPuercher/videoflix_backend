@@ -9,7 +9,7 @@ import os
 import subprocess
 from pathlib import Path
 
-from django.conf import settings
+from django.urls import reverse
 
 
 def create_thumbnail(video_id: int):
@@ -36,9 +36,9 @@ def create_thumbnail(video_id: int):
     subprocess.run(cmd, capture_output=True, check=True)
 
     if not video.thumbnail_url:
-        relative = thumbnail.relative_to(settings.MEDIA_ROOT).as_posix()
-        base_url = os.getenv('BACKEND_URL')
-        video.thumbnail_url = f"{base_url}{settings.MEDIA_URL}{relative}"
+        # Absolute URL of the thumbnail endpoint; reverse() follows urls.py.
+        path = reverse("video_thumbnail", kwargs={"movie_id": video.id})
+        video.thumbnail_url = f"{os.getenv('BACKEND_URL')}{path}"
         video.save(update_fields=["thumbnail_url"])
 
 

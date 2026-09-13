@@ -8,7 +8,7 @@ from rest_framework import generics
 from content_app.models import Video
 from .serializers import VideoSerializer
 from .throttling import ReceiveVideoRateThrottle, VideoListThrottle
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from content_app.models import Video
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
@@ -77,3 +77,31 @@ class HlsSegmentView(generics.views.APIView):
 
         return FileResponse(open(segment_path, "rb"),
                             content_type="video/MP2T")
+
+
+class VideoThumbnailView(generics.views.APIView):
+    """GET /api/video/<movie_id>/thumbnail.jpg: the generated preview image.
+
+    Public on purpose: the frontend loads it with a plain <img> tag, which
+    sends no cookie when frontend and API run on different sites. Served
+    by Django so it also works with DEBUG=False, where the development
+    media route in core/urls.py no longer exists.
+    """
+
+    authentication_classes = []
+    permission_classes = [AllowAny]
+    throttle_classes = [ReceiveVideoRateThrottle]
+
+    def get(self, request, *args, **kwargs):
+        """Stream the thumbnail; 404 if the worker has not created it yet."""
+        video = get_object_or_404(Video, pk=self.kwargs["movie_id"])
+        thumbnail_path = video.get_thumbnail_path()
+
+        if not thumbnail_path.is_file():
+            raise Http404
+
+        response = FileResponse(open(thumbnail_path, "rb"),
+                                content_type="image/jpeg")
+        # Let browsers and proxies keep it for a day.
+        response["Cache-Control"] = "public, max-age=86400"
+        return response
