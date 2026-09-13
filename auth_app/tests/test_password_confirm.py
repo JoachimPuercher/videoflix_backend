@@ -51,6 +51,32 @@ class PasswordConfirmTest(AuthAPITestCase):
         self.assertTrue(self.user.check_password(NEW_PASSWORD))
         self.assertFalse(self.user.check_password(PASSWORD))
 
+    def test_browser_gets_html_page(self):
+        """A browser request renders the result template."""
+        response = self.client.post(
+            self.url, self.payload, format="json", HTTP_ACCEPT="text/html"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTemplateUsed(response, "password_reset_result.html")
+        self.assertContains(response, "successfully reset")
+
+    def test_browser_gets_html_error_page(self):
+        """An invalid link sent from a browser renders the failure page."""
+        response = self.client.post(
+            confirm_url(self.uidb64, "abc-def"),
+            self.payload,
+            format="json",
+            HTTP_ACCEPT="text/html",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTemplateUsed(response, "password_reset_failed.html")
+        self.assertContains(
+            response,
+            "Password reset failed",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+        self.assert_password_unchanged()
+
     def test_link_works_only_once(self):
         """After the change the same token is rejected."""
         self.client.post(self.url, self.payload, format="json")

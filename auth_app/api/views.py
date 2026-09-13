@@ -310,12 +310,14 @@ class PasswordConfirmView(views.APIView):
     """POST /api/password_confirm/<uidb64>/<token>/: set the new password.
 
     The link becomes invalid by itself once the password changed, because
-    the password hash is part of the token.
+    the password hash is part of the token. Browsers (Accept: text/html)
+    get a result page, API clients get JSON.
     """
 
     authentication_classes = []
     permission_classes = [AllowAny]
     throttle_classes = [PasswordConfirmThrottle]
+    renderer_classes = [JSONRenderer, TemplateHTMLRenderer]
 
     def post(self, request, *args, **kwargs):
         """Resolve user, verify token, then validate and save the password."""
@@ -327,16 +329,10 @@ class PasswordConfirmView(views.APIView):
             user = User.objects.get(pk=user_id)
         except (TypeError, ValueError, OverflowError, User.DoesNotExist):
             # Broken uid or unknown user: same answer as an invalid token.
-            return Response(
-                data={
-                    "detail": "Invalid or expired link."},
-                status=status.HTTP_400_BAD_REQUEST)
+            return self.failed(request)
 
         if not default_token_generator.check_token(user, token):
-            return Response(
-                data={
-                    "detail": "Invalid or expired link."},
-                status=status.HTTP_400_BAD_REQUEST)
+            return self.failed(request)
 
         serializer = ResetPasswordSerializer(
             data=request.data, context={"user": user})
@@ -345,7 +341,37 @@ class PasswordConfirmView(views.APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
+        if request.accepted_renderer.format == 'html':
+            frontend = os.getenv('FRONTEND_URL')
+            template_data = {
+                "title": "Password changed",
+                "message": "Your Password has been successfully reset.",
+                "FRONTEND_URL": f"{frontend}/pages/auth/login.html",
+            }
+            return Response(
+                template_data, template_name='password_reset_result.html'
+            )
         return Response(
             data={
                 "detail": "Your Password has been successfully reset."},
             status=status.HTTP_200_OK)
+
+    def failed(self, request):
+        """400 for any invalid link: a page for browsers, JSON for clients."""
+        if request.accepted_renderer.format == 'html':
+            frontend = os.getenv('FRONTEND_URL')
+            template_data = {
+                "title": "Password reset failed",
+                "message": "This password reset link is invalid or has "
+                           "expired. Please request a new one.",
+                "FRONTEND_URL": f"{frontend}/pages/auth/forgot_password.html",
+            }
+            return Response(
+                template_data,
+                template_name='password_reset_failed.html',
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response(
+            data={
+                "detail": "Invalid or expired link."},
+            status=status.HTTP_400_BAD_REQUEST)
