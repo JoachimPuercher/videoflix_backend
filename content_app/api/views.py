@@ -4,6 +4,8 @@ All views require the JWT cookie. Files are served straight from
 MEDIA_ROOT with FileResponse; unknown ids, resolutions or files are a 404.
 """
 
+from pathlib import Path
+
 from rest_framework import generics
 from content_app.models import Video
 from .serializers import VideoSerializer
@@ -76,9 +78,10 @@ class HlsSegmentView(generics.views.APIView):
 
 
 class VideoThumbnailView(generics.views.APIView):
-    """GET /api/video/<movie_id>/thumbnail.jpg: the generated preview image.
+    """GET /api/video/<movie_id>/thumbnail.jpg: the preview image.
 
-    Public on purpose: the frontend loads it with a plain <img> tag, which
+    An uploaded thumbnail wins over the frame grabbed by the worker; both
+    are JPEGs, because uploads are re-encoded on save. Public on purpose: the frontend loads it with a plain <img> tag, which
     sends no cookie when frontend and API run on different sites. Served
     by Django so it also works with DEBUG=False, where the development
     media route in core/urls.py no longer exists.
@@ -88,9 +91,12 @@ class VideoThumbnailView(generics.views.APIView):
     permission_classes = [AllowAny]
 
     def get(self, request, *args, **kwargs):
-        """Stream the thumbnail; 404 if the worker has not created it yet."""
+        """Stream the thumbnail; 404 if there is none (yet)."""
         video = get_object_or_404(Video, pk=self.kwargs["movie_id"])
-        thumbnail_path = video.get_thumbnail_path()
+        if video.thumbnail_file:
+            thumbnail_path = Path(video.thumbnail_file.path)
+        else:
+            thumbnail_path = video.get_thumbnail_path()
 
         if not thumbnail_path.is_file():
             raise Http404

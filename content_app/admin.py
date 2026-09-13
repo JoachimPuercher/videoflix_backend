@@ -1,6 +1,7 @@
 """Admin registration for videos; uploading here starts the ffmpeg jobs."""
 
 from django.contrib import admin
+from content_app.images import reencode_as_jpeg
 from content_app.models import Video
 
 
@@ -14,6 +15,15 @@ class VideoAdmin(admin.ModelAdmin):
         if obj is None:
             return [field for field in fields if field != "thumbnail_url"]
         return fields
+
+    def save_model(self, request, obj, form, change):
+        """Store a new thumbnail upload only as a freshly encoded JPEG.
+
+        The model validator has already checked the upload at this point.
+        """
+        if "thumbnail_file" in form.changed_data and obj.thumbnail_file:
+            obj.thumbnail_file = reencode_as_jpeg(obj.thumbnail_file)
+        super().save_model(request, obj, form, change)
 
 
 admin.site.register(Video, VideoAdmin)

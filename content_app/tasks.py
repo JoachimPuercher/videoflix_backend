@@ -5,11 +5,8 @@ runs ffmpeg as an argument list with check=True so failures land in the
 rq failed registry instead of leaving empty folders behind.
 """
 
-import os
 import subprocess
 from pathlib import Path
-
-from django.urls import reverse
 
 
 def create_thumbnail(video_id: int):
@@ -36,9 +33,7 @@ def create_thumbnail(video_id: int):
     subprocess.run(cmd, capture_output=True, check=True)
 
     if not video.thumbnail_url:
-        # Absolute URL of the thumbnail endpoint; reverse() follows urls.py.
-        path = reverse("video_thumbnail", kwargs={"movie_id": video.id})
-        video.thumbnail_url = f"{os.getenv('BACKEND_URL')}{path}"
+        video.thumbnail_url = video.get_thumbnail_url()
         video.save(update_fields=["thumbnail_url"])
 
 

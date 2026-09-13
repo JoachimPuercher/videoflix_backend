@@ -14,11 +14,20 @@ from pathlib import Path
 
 @receiver(post_save, sender=Video)
 def video_post_save(sender, instance, created, **kwargs):
-    """Enqueue thumbnail and the three HLS renditions for a new video."""
+    """Handle the thumbnail and enqueue the three HLS renditions.
+
+    An uploaded thumbnail only needs its URL; without one the worker
+    grabs a frame from the video.
+    """
     if created:
         source_path = instance.video_file.path
         queue = django_rq.get_queue('default', autocommit=True)
-        queue.enqueue(create_thumbnail, instance.id)
+        if instance.thumbnail_file:
+            if not instance.thumbnail_url:
+                instance.thumbnail_url = instance.get_thumbnail_url()
+                instance.save(update_fields=["thumbnail_url"])
+        else:
+            queue.enqueue(create_thumbnail, instance.id)
         queue.enqueue(
             convert480p,
             source_path,
